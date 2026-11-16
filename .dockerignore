@@ -1,0 +1,29 @@
+
+# Git files
+.git/
+.gitignore
+
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Dataset
+data/
+
+# Model checkpoints and experiment outputs
+results/
+logs/
+wandb/
+
+# Sensitive configuration
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Temporary files
+*.log
+.DS_Store
+Thumbs.db

@@ -8,6 +8,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
 from anomalib.data import ImageItem, ImageBatch
+from huggingface_hub import hf_hub_download
 from anomalib.models import Patchcore
 from anomalib.engine import Engine
 
@@ -39,24 +40,12 @@ class AnomalyPredictor:
     def __init__(self, project_root):
 
         self.project_root = Path(project_root)
-
-        # Load trained PatchCore checkpoint
-        checkpoint_path = (
-            self.project_root
-            / "results"
-            / "Patchcore"
-            / "MVTecAD"
-            / "bottle"
-            / "latest"
-            / "weights"
-            / "lightning"
-            / "model.ckpt"
+        
+        checkpoint_path = hf_hub_download(
+            repo_id="PranavD1712/industrial-anomaly-patchcore-bottle",
+            filename="patchcore_bottle.ckpt"
         )
-
-        if not checkpoint_path.exists():
-            raise FileNotFoundError(
-                f"Checkpoint not found: {checkpoint_path}"
-            )
+        
 
         self.model = Patchcore.load_from_checkpoint(
             checkpoint_path,
@@ -78,9 +67,15 @@ class AnomalyPredictor:
 
         self.threshold = float(threshold_config["threshold"])
 
+        if not 0 <= self.threshold <= 1:
+            raise ValueError(
+                f"Invalid classification threshold: {self.threshold}"
+                )
+        
         self.engine = Engine()
 
-        print("PatchCore predictor initialized!")
+        print("PatchCore predictor initialized successfully!")
+        print(f"Checkpoint loaded from: {checkpoint_path}")
         print(f"Classification threshold: {self.threshold:.4f}")
 
     def predict(self, image_path):

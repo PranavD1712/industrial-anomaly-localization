@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile
 import json
+import time
 import io
 
 import streamlit as st
@@ -8,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from PIL import Image
-from src.predictor import AnomalyPredictor
 
 
 # ==========================================
@@ -39,6 +39,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+app_start_time = time.perf_counter()
 
 
 # ==========================================
@@ -212,14 +214,16 @@ render_html("""
 
 
 # ==========================================
-# 3. LOAD PATCHCORE MODEL
+# 3. LOAD PATCHCORE MODEL (LAZY + CACHED)
 # ==========================================
 
 @st.cache_resource
 def load_predictor():
+    # Imported here so that heavy libraries (PyTorch, Anomalib)
+    # load only when the model is first needed, not at app start-up
+    from src.predictor import AnomalyPredictor
 
     project_root = Path(__file__).resolve().parent
-
     return AnomalyPredictor(project_root)
 
 
@@ -292,19 +296,15 @@ with header_col2:
 
 
 # ==========================================
-# 6. INITIALIZE MODEL
+# 6. APPLICATION STATUS
 # ==========================================
 
-try:
-
-    predictor = load_predictor()
-
-    st.success("PatchCore model is ready for inspection.")
-
-except Exception as error:
-
-    st.error(f"Model initialization failed: {error}")
-    st.stop()
+# The model is NOT loaded here. It loads on the first analysis,
+# which keeps the page start-up fast.
+st.success(
+    "Application is ready. "
+    "The PatchCore model loads on the first analysis."
+)
 
 
 # ==========================================
@@ -395,11 +395,25 @@ if uploaded_file is not None:
                 temp_file.write(uploaded_file.getvalue())
                 temp_path = Path(temp_file.name)
 
+            # Load PatchCore only when analysis is requested
+            with st.spinner("Loading PatchCore model..."):
+
+                load_start = time.perf_counter()
+
+                predictor = load_predictor()
+
+                load_time = time.perf_counter() - load_start
+
+            # Run image inference
             with st.spinner(
                 "PatchCore is analyzing the uploaded image..."
             ):
 
+                prediction_start = time.perf_counter()
+
                 result = predictor.predict(temp_path)
+
+                prediction_time = time.perf_counter() - prediction_start
 
             # Extract results
             anomaly_score = result["anomaly_score"]
@@ -480,6 +494,12 @@ if uploaded_file is not None:
             st.caption(
                 "This is a normalized anomaly score, not a probability "
                 "or model confidence percentage."
+            )
+
+            st.info(
+                f"Model load: {load_time:.2f} s "
+                f"(near zero once cached)  ·  "
+                f"Inference: {prediction_time:.2f} s"
             )
 
             # ==================================
@@ -631,3 +651,10 @@ render_html("""
     <div>Powered by PatchCore · PyTorch · Anomalib · Streamlit</div>
 </div>
 """)
+
+app_execution_time = time.perf_counter() - app_start_time
+
+print(
+    f">>> APP SCRIPT EXECUTION TIME: "
+    f"{app_execution_time:.2f} seconds <<<"
+)

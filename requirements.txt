@@ -1,8 +1,12 @@
-torch==2.6.0
-torchvision==0.21.0
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu
 anomalib==2.6.2
-opencv-python
+opencv-python-headless
 matplotlib
 numpy
 pillow
-streamlit
+streamlit==1.65.0
+huggingface_hub
