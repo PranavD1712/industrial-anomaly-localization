@@ -1,258 +1,220 @@
 # Industrial Anomaly Detection and Localization using PatchCore
 
-An industrial computer vision project that detects defective products and localizes anomalous regions in bottle images using **PatchCore**, **PyTorch**, and **Anomalib**. The project includes a Streamlit web application for interactive image inspection, anomaly visualization, and defect localization.
+An industrial computer vision project that detects defective bottle images and localizes anomalous regions using **PatchCore**, **PyTorch**, **Anomalib**, and **Streamlit**.
+
+The application allows users to upload bottle images and receive an anomaly prediction, anomaly score, heatmap, and predicted defect mask.
 
 ## Project Overview
 
-In manufacturing industries, identifying defective products is an important part of quality control. Traditional manual inspection can be time-consuming and may not consistently identify small visual defects.
+In industrial manufacturing, identifying defective products is important for maintaining product quality. Manual inspection can be time-consuming and inconsistent.
 
-This project explores an automated visual inspection approach using deep learning-based anomaly detection.
+This project explores an automated visual inspection approach using PatchCore, a deep learning-based anomaly detection method.
 
-The system learns the visual characteristics of normal bottle images and identifies deviations from those patterns during inference. It produces an image-level anomaly score and a pixel-level anomaly map to help identify potentially defective regions.
+The model learns visual patterns from normal bottle images and identifies deviations from those patterns during inference.
 
-## Key Features
-
-- Industrial anomaly detection using PatchCore.
-- Training using normal product images.
-- Image-level anomaly classification.
+**Main capabilities:**
+- Image-level anomaly detection (Normal or Defective).
+- Anomaly score calculation.
 - Pixel-level anomaly localization.
-- Anomaly heatmap generation.
-- Binary defect mask generation.
-- Configurable classification threshold.
+- Anomaly heatmap visualization.
+- Predicted defect mask generation.
 - Interactive Streamlit application.
-- JSON-based inspection report export.
-- Defect mask download.
+- Model checkpoint hosted on Hugging Face.
 
-## Technology Stack
+## Demo
 
-| Category | Technologies |
+**Application:** https://industrial-anomaly-localization-eszc9foacithund2waymhr.streamlit.app/
+
+**Model:** [PatchCore Bottle Model on Hugging Face](https://huggingface.co/PranavD1712/industrial-anomaly-patchcore-bottle)
+
+**Source Code:** [GitHub Repository](https://github.com/PranavD1712/industrial-anomaly-localization)
+
+## Screenshots
+
+### Dashboard
+
+<p align="center">
+  <img src="assets/dashboard.png" alt="InspectAI dashboard" width="850">
+</p>
+
+### Defective Bottle Prediction
+
+The model flags the bottle as defective (anomaly score 0.9536, threshold 0.31) and localizes the damaged region in the heatmap and predicted mask.
+
+<p align="center">
+  <img src="assets/defective_prediction.png" alt="Defective bottle prediction with heatmap and mask" width="850">
+</p>
+
+### Normal Bottle Prediction
+
+The bottle passes inspection (anomaly score 0.1923, below the 0.31 threshold), and the predicted defect mask is empty.
+
+<p align="center">
+  <img src="assets/normal_prediction.png" alt="Normal bottle prediction" width="850">
+</p>
+
+## Technologies Used
+
+| Technology | Purpose |
 |---|---|
-| Programming Language | Python |
-| Deep Learning | PyTorch |
-| Anomaly Detection | Anomalib, PatchCore |
-| Image Processing | OpenCV, Pillow |
-| Data Visualization | Matplotlib |
-| Machine Learning Evaluation | Scikit-learn |
-| Web Application | Streamlit |
-| Development Environment | PyCharm, Python Virtual Environment |
-| Version Control | Git and GitHub |
+| Python | Main programming language |
+| PyTorch | Deep learning framework |
+| Anomalib | Anomaly detection framework |
+| PatchCore | Anomaly detection and localization |
+| Wide ResNet-50-2 | Pretrained feature extractor |
+| OpenCV | Image processing |
+| NumPy | Numerical operations |
+| Matplotlib | Anomaly visualization |
+| Streamlit | Interactive web application |
+| Hugging Face Hub | Model checkpoint hosting |
+| Docker | Containerization |
 
 ## Dataset
 
 This project uses the **MVTec Anomaly Detection (MVTec AD)** dataset, specifically the `bottle` category.
 
-The dataset contains normal training images, normal and defective test images, and ground-truth segmentation masks for defective samples.
+The dataset contains normal and defective bottle images, along with ground-truth masks for defective samples.
 
-### Dataset Details
+### Dataset Distribution
 
-| Dataset Split | Category | Number of Images |
+| Dataset Split | Category | Images |
 |---|---|---:|
 | Training | Good | 209 |
 | Testing | Good | 20 |
 | Testing | Broken Large | 20 |
 | Testing | Broken Small | 22 |
 | Testing | Contamination | 21 |
-| Ground Truth Masks | Broken Large | 20 |
-| Ground Truth Masks | Broken Small | 22 |
-| Ground Truth Masks | Contamination | 21 |
+| **Total Testing Images** | | **83** |
 
-**Total test images: 83**
+Ground-truth pixel masks are available for the defective test categories.
 
-The training set contains only normal bottle images. The model learns normal visual patterns and identifies deviations during testing.
+Dataset source: [MVTec Anomaly Detection Dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)
 
-Dataset source: [MVTec Anomaly Detection Dataset](https://www.mvtec.com/research-teaching/datasets/mvtec-ad)
+Note: The dataset is not included in this GitHub repository. Download it separately and place the bottle category inside the `data/` directory.
 
-**Dataset License:** MVTec AD is provided under its own license for non-commercial research purposes. Refer to the official license before downloading or using the dataset. The dataset is not included in this GitHub repository.
+## Methodology
 
-## Model Architecture: PatchCore
+### 1. Dataset Preparation
 
-PatchCore is an industrial anomaly detection method that uses pretrained CNN features to identify unusual visual patterns.
+The bottle category is organized into training, testing, and ground-truth mask directories.
 
-Unlike conventional supervised image classification, PatchCore does not require labeled defective images for its normal-pattern training process.
+The model uses normal training images to establish the visual characteristics of defect-free bottles.
 
-### How PatchCore Works
+### 2. Feature Extraction
 
-1. **Feature Extraction:** A pretrained Wide ResNet-50-2 extracts visual features from normal training images.
-2. **Memory Bank:** Representative feature embeddings from normal images are stored.
-3. **Coreset Selection:** A smaller representative subset of features is selected to reduce memory requirements.
-4. **Anomaly Detection:** During inference, test image features are compared with the stored normal feature representations.
-5. **Anomaly Localization:** Differences between test features and normal feature representations generate an anomaly map.
-6. **Classification:** An image-level anomaly score is compared with a classification threshold to determine whether the image is normal or defective.
+PatchCore uses a pretrained Wide ResNet-50-2 backbone to extract visual features from input images.
 
-### Model Configuration
+These features represent local image patterns and help identify unusual regions.
 
-| Parameter | Configuration |
-|---|---|
-| Model | PatchCore |
-| Backbone | Wide ResNet-50-2 |
-| Framework | PyTorch |
-| Library | Anomalib 2.6.2 |
-| Input Image Size | 256 × 256 |
-| Device | CPU |
-| Dataset Category | Bottle |
+### 3. Anomaly Detection
 
-## Project Workflow
+PatchCore compares extracted test-image features against a memory bank of normal training features.
 
-The project follows this workflow:
+Features that differ significantly from the learned normal patterns contribute to higher anomaly scores.
 
-1. Dataset inspection and exploration.
-2. Image preprocessing and visualization.
-3. PatchCore model training.
-4. Model checkpoint saving.
-5. Image-level and pixel-level evaluation.
-6. Classification threshold analysis.
-7. Single-image inference.
-8. Anomaly heatmap and defect mask generation.
-9. Streamlit application development.
+### 4. Anomaly Localization
+
+The model generates an anomaly map that highlights regions with unusual visual patterns.
+
+The predicted mask identifies regions classified as anomalous.
+
+### 5. Classification
+
+The image-level anomaly score is compared with the configured classification threshold.
+
+The threshold used in the application is:
+
+`0.31`
+
+Images are classified as:
+- Normal
+- Defective
 
 ## Model Evaluation
 
-The trained PatchCore model was evaluated on the 83 test images.
+The model was evaluated on 83 test images from the MVTec AD bottle category.
 
-### Image-Level Evaluation
-
-The following results were obtained using the default image-level classification threshold of 0.5:
+### Image-Level Metrics
 
 | Metric | Result |
 |---|---:|
-| AUROC | 1.0000 |
+| Image AUROC | 1.0000 |
 | Precision | 1.0000 |
 | Recall | 0.9841 |
 | F1-Score | 0.9920 |
-| Accuracy | 98.80% |
 
-Confusion Matrix:
-
-| | Predicted Normal | Predicted Defective |
-|---|---:|---:|
-| Actual Normal | 20 | 0 |
-| Actual Defective | 1 | 62 |
-
-### Pixel-Level Evaluation
-
-Pixel-level metrics evaluate how accurately the model identifies defective regions.
+### Pixel-Level Metrics
 
 | Metric | Result |
 |---|---:|
-| AUROC | 0.9856 |
+| Pixel AUROC | 0.9856 |
 | Precision | 0.6521 |
 | Recall | 0.8200 |
 | F1-Score | 0.7265 |
 
-The pixel-level results indicate that localization is more challenging than image-level classification, particularly because some normal pixels are incorrectly marked as anomalous.
+### Evaluation Notes
 
-### Threshold Analysis
+Image-level metrics measure how well the model distinguishes normal and defective images.
 
-An additional threshold analysis was performed to investigate how changing the image-level classification threshold affects precision, recall, and F1-score.
+Pixel-level metrics evaluate how accurately anomalous regions are localized.
 
-The exploratory analysis identified:
-
-- Selected threshold: `0.31`
-- Validation F1-score: `1.0000`
-- Holdout F1-score: `1.0000`
-
-**Evaluation limitation:** The threshold analysis used a split of the existing 83 test images. These images had already been examined during model evaluation and threshold experimentation. Therefore, the holdout results are exploratory and should not be considered an independent benchmark. A separate untouched test dataset is needed for a more reliable final performance estimate.
-
-The threshold configuration is stored in:
-
-`reports/threshold_analysis.json`
-
-The threshold analysis graph is stored in:
-
-`reports/threshold_analysis.png`
+These results are from a relatively small test set. The classification threshold was examined using the evaluation data, so the reported results should be considered exploratory rather than an independent benchmark. Further evaluation on a separate, untouched dataset is needed to establish generalization performance.
 
 ## Streamlit Application
 
-An interactive Streamlit application was developed to demonstrate the trained anomaly detection model.
+The project includes an interactive Streamlit dashboard.
 
-
-## Application Screenshots
-
-### Streamlit Dashboard
-![Streamlit Dashboard](assets/dashboard.png)
-
-### Defective Bottle Prediction
-![Defective Bottle Prediction](assets/defective_prediction.png)
-
-### Normal Bottle Prediction
-![Normal Bottle Prediction](assets/normal_prediction.png)
-
+Users can upload a bottle image and inspect the model's prediction.
 
 ### Application Features
 
-- Upload bottle images.
-- Perform automated anomaly detection.
-- Display image-level anomaly scores.
-- Classify products as Normal or Defective.
-- Visualize anomaly heatmaps.
-- Display predicted binary defect masks.
-- Download inspection reports in JSON format.
-- Download predicted defect masks as PNG images.
+- Upload PNG, JPG, and JPEG images.
+- Detect normal and defective bottle images.
+- Display anomaly scores and classification thresholds.
+- Generate anomaly heatmaps.
+- Display predicted defect masks.
+- Download prediction reports in JSON format.
+- Download predicted masks.
+- Display inference time.
 
-### Prediction Output
+The model is loaded on demand when the user requests an image analysis. Streamlit resource caching avoids repeatedly initializing the model during normal application reruns.
 
-The application generates three visual outputs:
+## Model Hosting
 
-1. Original input image.
-2. Anomaly heatmap.
-3. Predicted defect segmentation mask.
+The trained PatchCore checkpoint is hosted separately on Hugging Face.
 
-The application uses the trained PatchCore checkpoint and the configured image-level classification threshold.
+Repository:
 
-## Project Structure
+[PranavD1712/industrial-anomaly-patchcore-bottle](https://huggingface.co/PranavD1712/industrial-anomaly-patchcore-bottle)
 
-```text
-industrial-anomaly-localization/
-│
-├── app.py
-│
-├── configs/
-│
-├── src/
-│   ├── __init__.py
-│   ├── train.py
-│   ├── inspect_dataset.py
-│   ├── preprocessing_demo.py
-│   ├── predict.py
-│   ├── predictor.py
-│   ├── evaluate.py
-│   └── threshold_analysis.py
-│
-├── data/
-│   └── bottle/
-│       ├── train/
-│       ├── test/
-│       └── ground_truth/
-│
-├── reports/
-│   ├── threshold_analysis.json
-│   ├── threshold_analysis.png
-│   ├── single_image_prediction.png
-│   └── prediction_result.png
-│
-├── results/
-│   └── PatchCore/
-│
-├── tests/
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
+The application downloads the checkpoint using `hf_hub_download()`.
+
+```python
+from huggingface_hub import hf_hub_download
+
+checkpoint_path = hf_hub_download(
+    repo_id="PranavD1712/industrial-anomaly-patchcore-bottle",
+    filename="patchcore_bottle.ckpt"
+)
 ```
 
-Note: The dataset and trained checkpoint directories are kept locally and excluded from GitHub.
+The downloaded checkpoint is cached locally by the Hugging Face Hub library.
 
-## Installation and Setup
+## Installation and Local Setup
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/industrial-anomaly-localization.git
+git clone https://github.com/PranavD1712/industrial-anomaly-localization.git
+```
 
+### 2. Navigate to the project directory
+
+```bash
 cd industrial-anomaly-localization
 ```
 
-### 2. Create a Virtual Environment
+### 3. Create a virtual environment
 
 ```bash
 python -m venv .venv
@@ -261,70 +223,89 @@ python -m venv .venv
 Activate it on Windows:
 
 ```powershell
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 ```
 
-### 3. Install Dependencies
+### 4. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Download the Dataset
-
-Download MVTec AD from the official website:
-
-https://www.mvtec.com/research-teaching/datasets/mvtec-ad
-
-Extract the bottle category into:
-
-```text
-data/bottle/
-```
-
-Ensure the dataset has the expected `train`, `test`, and `ground_truth` directories.
-
-### 5. Train the Model
+### 5. Run the application
 
 ```bash
-python src/train.py
+python -m streamlit run app.py
 ```
 
-The training process generates the PatchCore checkpoint in the Anomalib results directory.
+Open the local URL displayed in your terminal, usually:
 
-### 6. Run the Streamlit Application
+`http://localhost:8501`
 
-After training and confirming that the checkpoint and threshold configuration exist, execute:
+The application downloads the model checkpoint from Hugging Face when the first prediction is requested.
 
-```bash
-streamlit run app.py
-```
-
-The application will normally be available at:
+## Project Structure
 
 ```text
-http://localhost:8501
+industrial-anomaly-localization/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+│
+├── src/
+│   ├── __init__.py
+│   ├── train.py
+│   ├── predict.py
+│   ├── predictor.py
+│   ├── evaluate.py
+│   ├── threshold_analysis.py
+│   ├── inspect_dataset.py
+│   └── preprocessing_demo.py
+│
+├── configs/
+├── models/
+├── reports/
+├── tests/
+└── assets/
 ```
+
+The trained checkpoint and dataset are hosted or stored separately rather than committed to GitHub.
+
+## Performance
+
+The application was tested locally on a CPU-only environment.
+
+Observed measurements during local testing:
+
+| Operation | Observed Time |
+|---|---:|
+| Initial PatchCore initialization | Approximately 97.21 seconds |
+| First image inference | Approximately 9.40 seconds |
+| Subsequent image inference | Approximately 2.20 seconds |
+| Initial dashboard script execution after lazy loading | Approximately 1.16 seconds |
+
+These are individual local observations, not guaranteed performance benchmarks. Actual performance depends on hardware, application environment, and image characteristics.
 
 ## Limitations
 
-- The current implementation focuses only on the bottle category.
-- The model uses CPU inference, which may be slower than GPU inference.
-- Evaluation is based on a relatively small test set of 83 images.
-- Threshold analysis has not yet been validated on an independent dataset.
-- Pixel-level localization still produces false-positive regions.
-- The current application is a local prototype and has not yet been deployed for production use.
+- The project currently focuses on the bottle category of MVTec AD.
+- Evaluation uses a relatively small test set.
+- CPU inference can be slower than GPU inference.
+- The selected classification threshold requires validation on independent data.
+- Performance on other product categories has not been established.
 
 ## Future Improvements
 
 - Extend anomaly detection to additional MVTec AD categories.
-- Improve pixel-level localization and reduce false positives.
-- Perform independent threshold calibration and evaluation.
-- Add batch image inspection.
-- Develop a REST API using FastAPI.
-- Containerize the application using Docker.
-- Deploy the application to a cloud platform.
-- Add automated testing and continuous integration.
+- Evaluate performance on independent industrial datasets.
+- Improve pixel-level localization.
+- Optimize CPU inference performance.
+- Add more comprehensive automated tests.
+- Improve deployment monitoring and error handling.
 
 ## 👨‍💻 Author
 
@@ -332,3 +313,7 @@ http://localhost:8501
 *Computer Vision · Machine Learning*
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pranav-deshmukh2004)
+
+---
+
+*This project was developed as a hands-on exploration of industrial visual inspection using deep learning and anomaly detection.*
